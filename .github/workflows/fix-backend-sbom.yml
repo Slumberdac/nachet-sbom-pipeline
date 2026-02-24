@@ -1,3 +1,4 @@
+---
 name: Fix Backend SBOM
 
 on:
@@ -17,7 +18,8 @@ jobs:
   fix:
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/fix-backend-sbom'))
+      (github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '/fix-backend-sbom'))
     runs-on: ubuntu-latest
 
     steps:
@@ -34,11 +36,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              username: context.actor,
-            });
+            const { data } = await github
+              .rest
+              .repos
+              .getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.actor,
+              });
             const allowed = new Set(["admin","maintain","write"]);
             if (!allowed.has(data.permission)) {
               core.setFailed(`Not authorized (permission: ${data.permission})`);
@@ -90,7 +95,9 @@ jobs:
         id: commit
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config \
+            user.email \
+              "41898282+github-actions[bot]@users.noreply.github.com"
           git add backend/sbom.json
           if git diff --cached --quiet; then
             echo "changed=false" >> $GITHUB_OUTPUT
@@ -109,20 +116,25 @@ jobs:
           git push origin "HEAD:refs/heads/${BRANCH}"
 
       - name: Comment instructions on PR
-        if: steps.commit.outputs.changed == 'true' && steps.push.outcome != 'success'
+        if:
+          steps.commit.outputs.changed == 'true' &&
+          steps.push.outcome != 'success'
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = Number("${{ steps.pr.outputs.number }}");
 
+            body: [
+              "I regenerated `backend/sbom.json`, but I couldn't push it back",
+              "to the PR branch.",
+              "",
+              "You can regenerate the SBOM locally by running",
+              "`cd nachet && ./generate-sbom.sh backend`",
+            ].join("\n"),
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body:
-                [
-                  "I regenerated `backend/sbom.json`, but I couldn't push it back to the PR branch.",
-                  "",
-                  `You can regenerate the SBOM locally by running \`cd nachet && ./generate-sbom.sh backend\`
-                ].join("\n"),
+              body: body,
             });

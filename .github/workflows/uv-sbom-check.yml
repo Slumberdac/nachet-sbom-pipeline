@@ -41,8 +41,13 @@ jobs:
 
       - name: Generate new SBOM
         run: |
-          uv run cyclonedx-py environment --output-reproducible -v --sv 1.6 \
-            --pyproject pyproject.toml -o sbom-new.json && echo "" >> sbom-new.json
+          uv run cyclonedx-py environment \
+            --output-reproducible \
+            -v \
+            --sv 1.6 \
+            --pyproject pyproject.toml \
+            -o sbom-new.json \
+          && printf "\n" >> sbom-new.json
 
       - name: Check if SBOM needs update
         id: sbom-check
@@ -52,22 +57,32 @@ jobs:
             echo "needs_update=true" >> $GITHUB_OUTPUT
             echo "## SBOM Creation Required" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The SBOM file (sbom.json) does not exist and needs to be generated." >> $GITHUB_STEP_SUMMARY
+            echo "The SBOM file (sbom.json) does not exist and needs" \
+                "to be generated." \
+              >> "$GITHUB_STEP_SUMMARY"
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run the following command to create it:" >> $GITHUB_STEP_SUMMARY
+            echo "Run the following command to create it:" \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo 'cd nachet && ./generate-sbom.sh ${{ inputs.working-directory }} ' >> $GITHUB_STEP_SUMMARY
+            echo 'cd nachet && ./generate-sbom.sh' \
+                '${{ inputs.working-directory }}' \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> $GITHUB_STEP_SUMMARY
           elif ! cmp -s sbom.json sbom-new.json; then
             echo "SBOM file is outdated and needs to be regenerated"
             echo "needs_update=true" >> $GITHUB_OUTPUT
             echo "## SBOM Update Required" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The SBOM file (sbom.json) is outdated and needs to be regenerated." >> $GITHUB_STEP_SUMMARY
+            echo "The SBOM file (sbom.json) is outdated and needs" \
+                "to be regenerated." \
+              >> "$GITHUB_STEP_SUMMARY"
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run the following command to update it:" >> $GITHUB_STEP_SUMMARY
+            echo "Run the following command to update it:" \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo 'cd nachet && ./generate-sbom.sh ${{ inputs.working-directory }} ' >> $GITHUB_STEP_SUMMARY
+            echo 'cd nachet && ./generate-sbom.sh' \
+                '${{ inputs.working-directory }}' \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> $GITHUB_STEP_SUMMARY
           else
             echo "SBOM file is up to date"
@@ -86,7 +101,15 @@ jobs:
       - name: Fail if SBOM needs update
         if: steps.sbom-check.outputs.needs_update == 'true'
         run: |
-          echo "SBOM file needs to be regenerated. Maintainers can run the Fix Backend SBOM workflow."
-          echo "Or run: cd nachet && ./generate-sbom.sh ${{ inputs.working-directory }} "
-          echo 'Or a maintainer can run the Fix Frontend SBOM workflow throug github actions or by commenting "/fix-backend-sbom" to regenerate and push the updated sbom.json.'
+          echo "SBOM file needs to be regenerated."
+          echo "Maintainers can run the Fix Backend SBOM workflow."
+          echo
+          echo "Or run:"
+          echo "  cd nachet && ./generate-sbom.sh" \
+              "${{ inputs.working-directory }}"
+          echo
+          echo "Or run the Fix Frontend SBOM workflow in GitHub Actions"
+          echo "or comment \"/fix-backend-sbom\" to regenerate and push"
+          echo "the updated sbom.json."
+
           exit 1

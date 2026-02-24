@@ -6,7 +6,8 @@ permissions:
   pull-requests: write
 
 # concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number ||
+#     github.ref }}
 #   cancel-in-progress: true
 
 on:
@@ -42,7 +43,8 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: "npm"
-          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+          cache-dependency-path: >-
+            ${{ inputs.working-directory }}/package-lock.json
 
       - name: Install specific npm version
         run: npm install -g npm@${{ inputs.npm-version }}
@@ -52,7 +54,13 @@ jobs:
 
       - name: Generate new SBOM
         run: |
-          npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom-new.json && echo "" >> sbom-new.json
+          npx cyclonedx-npm package-lock.json \
+            --output-reproducible \
+            --package-lock-only \
+            -v \
+            --sv 1.6 \
+            -o sbom-new.json \
+          && printf "\n" >> sbom-new.json
 
       - name: Check if SBOM needs update
         id: sbom-check
@@ -62,19 +70,34 @@ jobs:
             echo "needs_update=true" >> $GITHUB_OUTPUT
             echo "## SBOM Creation Required" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The SBOM file (sbom.json) does not exist and needs to be generated." >> $GITHUB_STEP_SUMMARY
+            echo "The SBOM file (sbom.json) does not exist and needs" \
+                "to be generated." \
+              >> "$GITHUB_STEP_SUMMARY"
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Run the following command to create it:" >> $GITHUB_STEP_SUMMARY
+            echo "Run the following command to create it:" \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo 'npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" >> sbom.json' >> $GITHUB_STEP_SUMMARY
+            echo "npx cyclonedx-npm package-lock.json \\" \
+                "--output-reproducible \\" \
+                "--package-lock-only \\" \
+                "-v \\" \
+                "--sv 1.6 \\" \
+                "-o sbom.json \\" \
+                "&& echo \"\" >> sbom.json" \
+              >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> $GITHUB_STEP_SUMMARY
           elif ! cmp -s sbom.json sbom-new.json; then
-            # HACK: cyclonedx-npm --output-reproducible is not truly reproducible
-            # due to non-deterministic BOM-REF generation and component ordering.
+          # HACK: cyclonedx-npm --output-reproducible isn't fully reproducible.
+          # BOM-REF values and component ordering can be non-deterministic.
             # Filter out BOM-REF differences and only count meaningful changes.
-            diff_lines=$(diff sbom.json sbom-new.json | grep -v "bom-ref\|BomRef\|content.*:" | wc -l)
+            diff_lines=$(
+              diff sbom.json sbom-new.json \
+                | grep -v "bom-ref\|BomRef\|content.*:" \
+                | wc -l
+            )
             if [ "$diff_lines" -gt 100 ]; then
-              echo "SBOM file is outdated and needs to be regenerated (significant changes: $diff_lines lines)"
+              echo "SBOM file is outdated and needs to be regenerated" \
+                  "(significant changes: $diff_lines lines)"
               echo "needs_update=true" >> $GITHUB_OUTPUT
               echo "## SBOM Update Required" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
@@ -84,14 +107,24 @@ jobs:
               echo "Run the following command to update it:" \
                 >> $GITHUB_STEP_SUMMARY
               echo '```bash' >> $GITHUB_STEP_SUMMARY
-              echo 'npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" >> sbom.json' >> $GITHUB_STEP_SUMMARY
+              echo "npx cyclonedx-npm package-lock.json \\" \
+                  "--output-reproducible \\" \
+                  "--package-lock-only \\" \
+                  "-v \\" \
+                  "--sv 1.6 \\" \
+                  "-o sbom.json \\" \
+                  "&& echo \"\" >> sbom.json" \
+                >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> $GITHUB_STEP_SUMMARY
             else
-              echo "SBOM file has minor differences ($diff_lines lines) within tolerance"
+              echo "SBOM file has minor differences" \
+                "($diff_lines lines) within tolerance"
               echo "needs_update=false" >> $GITHUB_OUTPUT
               echo "## SBOM Status" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "✅ SBOM file differences within acceptable tolerance ($diff_lines lines)" >> $GITHUB_STEP_SUMMARY
+              echo "✅ SBOM file differences within acceptable tolerance" \
+                    "($diff_lines lines)" \
+                  >> "$GITHUB_STEP_SUMMARY"
             fi
           else
             echo "SBOM file is up to date"
@@ -111,6 +144,19 @@ jobs:
         if: steps.sbom-check.outputs.needs_update == 'true'
         run: |
           echo "SBOM file needs to be regenerated. Please run:"
-          echo 'npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" >> sbom.json'
-          echo 'Or a maintainer can run the Fix Frontend SBOM workflow throug github actions or by commenting "/fix-frontend-sbom" to regenerate and push the updated sbom.json.'
+          echo
+
+          echo "npx cyclonedx-npm package-lock.json \\"
+          echo "  --output-reproducible \\"
+          echo "  --package-lock-only \\"
+          echo "  -v \\"
+          echo "  --sv 1.6 \\"
+          echo "  -o sbom.json \\"
+          echo "&& echo \"\" >> sbom.json"
+          echo
+
+          echo "Or a maintainer can run the 'Fix Frontend SBOM' workflow"
+          echo "through GitHub Actions or comment \"/fix-frontend-sbom\""
+          echo "to regenerate and push the updated sbom.json."
+
           exit 1
