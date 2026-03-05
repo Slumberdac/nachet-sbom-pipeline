@@ -145,7 +145,7 @@ jobs:
 
       - name: Generate new SBOM
         run: |
-          npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" > sbom.json
+          npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" >> sbom.json
 
       - name: print SBOM --- IGNORE ---
         run: |
