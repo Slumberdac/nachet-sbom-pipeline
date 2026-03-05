@@ -146,10 +146,12 @@ jobs:
         run: |
           npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" > sbom.json
 
+      - name: Return to root directory for scan
+        working-directory: .
+
       - uses: anchore/scan-action@e286cbc3c2c32c6b8bb4180b424e5b101f59e051
         name: SBOM Security Scan
         id: scan
-        working-directory: . # Return to root to ensure paths in SARIF are correct
         with:
           sbom: frontend/sbom.json
           fail-build: false
