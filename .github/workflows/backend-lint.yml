@@ -113,6 +113,9 @@ jobs:
             --pyproject pyproject.toml -o sbom.json && echo "" > sbom.json
         working-directory: backend
 
+      - name: print SBOM
+        run: cat backend/sbom.json
+
       - uses: anchore/scan-action@e286cbc3c2c32c6b8bb4180b424e5b101f59e051
         name: SBOM Security Scan
         id: scan
