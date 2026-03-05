@@ -147,6 +147,10 @@ jobs:
         run: |
           npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" > sbom.json
 
+      - name: print SBOM --- IGNORE ---
+        run: |
+          pwd && ls -la && cat frontend/sbom.json
+
       - uses: anchore/scan-action@e286cbc3c2c32c6b8bb4180b424e5b101f59e051
         name: SBOM Security Scan
         id: scan
