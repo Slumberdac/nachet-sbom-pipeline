@@ -118,7 +118,7 @@ jobs:
         with:
           sbom: backend/sbom.json
           fail-build: false
-          working-directory: backend
+          working-directory: .
 
       - name: Check SBOM scan results
         run: cat ${{ steps.scan.outputs.sarif }}
