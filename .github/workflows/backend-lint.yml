@@ -116,7 +116,7 @@ jobs:
       - name: print SBOM
         run: |
           pwd && ls -la && cat backend/sbom.json
-        working-directory: ..
+        working-directory: .
 
       - uses: anchore/scan-action@e286cbc3c2c32c6b8bb4180b424e5b101f59e051
         name: SBOM Security Scan
