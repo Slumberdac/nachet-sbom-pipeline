@@ -121,6 +121,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sbom-security-scan:
+    needs: [versions]
     runs-on: ubuntu-latest
     permissions:
       security-events: write
