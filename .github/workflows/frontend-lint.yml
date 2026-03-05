@@ -145,15 +145,14 @@ jobs:
       - name: Generate new SBOM
         run: |
           npx cyclonedx-npm package-lock.json --output-reproducible --package-lock-only -v --sv 1.6 -o sbom.json && echo "" > sbom.json
-        working-directory: frontend
 
       - uses: anchore/scan-action@e286cbc3c2c32c6b8bb4180b424e5b101f59e051
         name: SBOM Security Scan
         id: scan
+        working-directory: . # Return to root to ensure paths in SARIF are correct
         with:
           sbom: frontend/sbom.json
           fail-build: false
-        working-directory: . # Return to root to ensure paths in SARIF are correct
       - name: Check SBOM scan results
         run: cat ${{ steps.scan.outputs.sarif }}
       - name: Fix SARIF artifact locations
