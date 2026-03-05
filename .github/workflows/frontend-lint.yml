@@ -153,6 +153,7 @@ jobs:
         with:
           sbom: frontend/sbom.json
           fail-build: false
+        working-directory: . # Return to root to ensure paths in SARIF are correct
       - name: Check SBOM scan results
         run: cat ${{ steps.scan.outputs.sarif }}
       - name: Fix SARIF artifact locations
